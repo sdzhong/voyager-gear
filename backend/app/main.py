@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth
+from app.api.routes import auth, products
 from app.config import settings
 from app.database import init_db
 
@@ -28,6 +28,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router, prefix="/api")
+app.include_router(products.router, prefix="/api")
 
 
 @app.get("/")

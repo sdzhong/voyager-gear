@@ -7,6 +7,54 @@ const sleep = async (ms: number): Promise<void> =>
 const mockUsers: any[] = []
 let userIdCounter = 1
 
+// Mock product database
+const mockProducts = [
+  {
+    id: 1,
+    name: 'Rolling Hardside Spinner Large',
+    description: 'Durable hardside luggage with 360° spinner wheels. TSA-approved lock, expandable design, and scratch-resistant finish. Perfect for long trips.',
+    price: 249.99,
+    category: 'luggage',
+    image_url: 'https://images.unsplash.com/photo-1565026057447-bc90a3dceb87?w=800',
+    stock: 25,
+    created_at: new Date('2024-01-01').toISOString(),
+    updated_at: new Date('2024-01-01').toISOString(),
+  },
+  {
+    id: 2,
+    name: 'Travel Backpack 40L',
+    description: 'Versatile 40L travel backpack with laptop sleeve. Carry-on compliant size. Multiple access points and compression straps.',
+    price: 119.99,
+    category: 'bags',
+    image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800',
+    stock: 50,
+    created_at: new Date('2024-01-02').toISOString(),
+    updated_at: new Date('2024-01-02').toISOString(),
+  },
+  {
+    id: 3,
+    name: 'Travel Pillow Memory Foam',
+    description: 'Ergonomic memory foam travel pillow with removable, washable cover. Provides neck support on planes, trains, and cars.',
+    price: 29.99,
+    category: 'travel_accessories',
+    image_url: 'https://images.unsplash.com/photo-1545987796-b199d6abb1b4?w=800',
+    stock: 80,
+    created_at: new Date('2024-01-03').toISOString(),
+    updated_at: new Date('2024-01-03').toISOString(),
+  },
+  {
+    id: 4,
+    name: 'Laptop Stand Portable Aluminum',
+    description: 'Adjustable laptop stand folds flat for travel. Compatible with laptops up to 17 inches. Improves posture and airflow.',
+    price: 49.99,
+    category: 'digital_nomad',
+    image_url: 'https://images.unsplash.com/photo-1587614382346-4ec70e388b28?w=800',
+    stock: 55,
+    created_at: new Date('2024-01-04').toISOString(),
+    updated_at: new Date('2024-01-04').toISOString(),
+  },
+]
+
 export const handlers = [
   http.get('http://localhost:3000/api/doclist', async () => {
     const data: DocList = [
@@ -144,5 +192,75 @@ export const handlers = [
   http.post('http://localhost:5001/api/auth/logout', async () => {
     await sleep(200)
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Product Endpoints
+  http.get('http://localhost:5001/api/products', async ({ request }) => {
+    await sleep(500)
+
+    const url = new URL(request.url)
+    const category = url.searchParams.get('category')
+    const search = url.searchParams.get('search')
+    const sortBy = url.searchParams.get('sort_by') || 'created_at'
+    const sortOrder = url.searchParams.get('sort_order') || 'desc'
+    const page = parseInt(url.searchParams.get('page') || '1')
+    const pageSize = parseInt(url.searchParams.get('page_size') || '12')
+
+    let filteredProducts = [...mockProducts]
+
+    // Apply category filter
+    if (category) {
+      filteredProducts = filteredProducts.filter((p) => p.category === category)
+    }
+
+    // Apply search filter
+    if (search) {
+      const searchLower = search.toLowerCase()
+      filteredProducts = filteredProducts.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchLower) ||
+          p.description.toLowerCase().includes(searchLower),
+      )
+    }
+
+    // Apply sorting
+    filteredProducts.sort((a: any, b: any) => {
+      const aVal = a[sortBy]
+      const bVal = b[sortBy]
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1
+      } else {
+        return aVal < bVal ? 1 : -1
+      }
+    })
+
+    const total = filteredProducts.length
+    const totalPages = Math.ceil(total / pageSize)
+    const startIndex = (page - 1) * pageSize
+    const paginatedProducts = filteredProducts.slice(startIndex, startIndex + pageSize)
+
+    return HttpResponse.json({
+      products: paginatedProducts,
+      total,
+      page,
+      page_size: pageSize,
+      total_pages: totalPages,
+    })
+  }),
+
+  http.get('http://localhost:5001/api/products/:id', async ({ params }) => {
+    await sleep(300)
+
+    const productId = parseInt(params.id as string)
+    const product = mockProducts.find((p) => p.id === productId)
+
+    if (!product) {
+      return HttpResponse.json(
+        { detail: `Product with id ${productId} not found` },
+        { status: 404 },
+      )
+    }
+
+    return HttpResponse.json(product)
   }),
 ]

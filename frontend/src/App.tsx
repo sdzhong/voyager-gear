@@ -8,6 +8,8 @@ import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Account from './pages/Account'
+import Products from './pages/Products'
+import ProductDetail from './pages/ProductDetail'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 
 
@@ -23,6 +25,7 @@ const Navigation = () => {
   return (
     <nav style={{ display: 'flex', gap: '20px', padding: '1.5rem', background: '#2c3e50', color: 'white', alignItems: 'center' }}>
       <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>VOYAGER</Link>
+      <Link to="/products" style={{ color: 'white', textDecoration: 'none' }}>Products</Link>
       <Link to="/search" style={{ color: 'white', textDecoration: 'none' }}>Search</Link>
       <Link to="/cart" style={{ color: 'white', textDecoration: 'none' }}>Cart</Link>
 
@@ -124,6 +127,8 @@ export default function VoyagerApp() {
       <Navigation />
       <Routes>
         <Route path="/" element={<><Hero />{/* Render product list here */}</>} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/cart" element={<div style={{padding: '40px'}}><Link to="/checkout">Proceed to Checkout</Link></div>} />

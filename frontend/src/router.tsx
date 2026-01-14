@@ -6,6 +6,8 @@ import Index from './pages/Index'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Account from './pages/Account'
+import Products from './pages/Products'
+import ProductDetail from './pages/ProductDetail'
 import Notfound from './pages/Notfound'
 
 const router = createBrowserRouter([
@@ -41,6 +43,22 @@ const router = createBrowserRouter([
           <Account />
         </Layout>
       </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/products',
+    element: (
+      <Layout>
+        <Products />
+      </Layout>
+    ),
+  },
+  {
+    path: '/products/:id',
+    element: (
+      <Layout>
+        <ProductDetail />
+      </Layout>
     ),
   },
   {
