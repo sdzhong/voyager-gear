@@ -5,11 +5,17 @@ A full-stack e-commerce platform for adventure gear with user authentication, fe
 ## Features
 
 - **User Authentication** - Registration, login, and JWT-based auth
+- **Product Catalog** - Browse 120+ adventure gear products across 4 categories
+- **Shopping Cart** - Guest and authenticated cart support with persistence
+- **Checkout System** - Multi-step checkout with order processing
+- **Order Management** - View order history and details
+- **Microservices Architecture** - Go-based checkout and validation services
 - **Protected Routes** - Secure pages requiring authentication
 - **Account Management** - User profile and account settings
 - **Modern UI** - Clean, responsive design with Tailwind CSS
 - **Mock Service Worker** - Development without backend dependency
 - **RESTful API** - FastAPI backend with OpenAPI documentation
+- **User Session Simulator** - Generate realistic traffic for testing
 
 ## Tech Stack
 
@@ -30,6 +36,11 @@ A full-stack e-commerce platform for adventure gear with user authentication, fe
 - **Pydantic** - Data validation
 - **Pytest** - Testing framework
 
+### Microservices (Go)
+- **Checkout Service** - Order processing and orchestration
+- **Mock Address Validator** - Address validation with N+1 patterns
+- **Go** 1.21+ - High-performance microservices
+
 ## Project Structure
 
 ```
@@ -37,8 +48,8 @@ voyager-gear/
 ├── frontend/          # React + TypeScript frontend
 │   ├── src/
 │   │   ├── components/   # Reusable components
-│   │   ├── pages/        # Page components
-│   │   ├── contexts/     # React contexts (Auth)
+│   │   ├── pages/        # Page components (Products, Cart, Checkout, Orders)
+│   │   ├── contexts/     # React contexts (Auth, Checkout)
 │   │   ├── services/     # API services
 │   │   ├── hooks/        # Custom React hooks
 │   │   ├── utils/        # Utility functions
@@ -48,13 +59,23 @@ voyager-gear/
 │
 ├── backend/           # FastAPI Python backend
 │   ├── app/
-│   │   ├── api/         # API routes
+│   │   ├── api/         # API routes (auth, products, cart, orders)
 │   │   ├── core/        # Core utilities (security, config)
-│   │   ├── models/      # Database models
+│   │   ├── models/      # Database models (User, Product, Cart, Order)
 │   │   ├── schemas/     # Pydantic schemas
 │   │   └── tests/       # Backend tests
+│   ├── scripts/        # Utility scripts (seed_products.py)
 │   └── run.py          # Development server
 │
+├── checkout-service/  # Go microservices
+│   ├── cmd/
+│   │   └── mock-validator/  # Address validation service
+│   ├── services/       # Checkout orchestration
+│   ├── handlers/       # HTTP handlers
+│   └── main.go         # Service entry point
+│
+├── simulate_user_sessions.py  # Traffic simulator
+├── startup.sh         # Start all services script
 └── README.md          # This file
 ```
 
@@ -66,6 +87,7 @@ voyager-gear/
 - **pnpm** 10.x or higher (or npm)
 - **Python** 3.10 or higher
 - **pip** (Python package manager)
+- **Go** 1.21 or higher (for checkout services)
 
 ### Installation
 
@@ -107,12 +129,30 @@ npm install
 
 # Set up environment variables
 cp .env.sample .env
-# Update VITE_API_URL if needed (defaults to http://localhost:5000)
+# Update VITE_API_URL if needed (defaults to http://localhost:5001)
 ```
 
 ## Running the Application
 
-### Option 1: Full Stack (Backend + Frontend)
+### Option 1: Quick Start (All Services with startup.sh)
+
+The easiest way to start all services at once:
+
+```bash
+./startup.sh
+```
+
+This will automatically start:
+- **Backend API** - http://localhost:5001
+- **Checkout Service** - http://localhost:5002
+- **Mock Validator** - http://localhost:5003
+- **Frontend** - http://localhost:3000
+
+Press `Ctrl+C` to stop all services.
+
+> **Note:** Requires Python virtual environment to be set up in `backend/venv` and all dependencies installed.
+
+### Option 2: Manual Startup (Individual Services)
 
 **Terminal 1 - Backend:**
 ```bash
@@ -121,10 +161,24 @@ source venv/bin/activate  # macOS/Linux
 # or venv\Scripts\activate on Windows
 python run.py
 ```
-Backend runs at: **http://localhost:5000**
-API docs at: **http://localhost:5000/docs**
+Backend runs at: **http://localhost:5001**
+API docs at: **http://localhost:5001/docs**
 
-**Terminal 2 - Frontend:**
+**Terminal 2 - Mock Validator:**
+```bash
+cd checkout-service/cmd/mock-validator
+go run main.go
+```
+Mock Validator runs at: **http://localhost:5003**
+
+**Terminal 3 - Checkout Service:**
+```bash
+cd checkout-service
+go run main.go
+```
+Checkout Service runs at: **http://localhost:5002**
+
+**Terminal 4 - Frontend:**
 ```bash
 cd frontend
 pnpm dev
@@ -132,7 +186,7 @@ pnpm dev
 ```
 Frontend runs at: **http://localhost:3000**
 
-### Option 2: Frontend Only (with MSW Mocks)
+### Option 3: Frontend Only (with MSW Mocks)
 
 The frontend includes Mock Service Worker (MSW) that intercepts API calls, allowing you to develop without running the backend:
 
@@ -151,29 +205,48 @@ MSW will automatically mock all authentication endpoints. You can:
 
 ## Using the Application
 
-### 1. Register a New Account
+### 1. Browse Products
 1. Navigate to **http://localhost:3000**
-2. Click **Sign up** or visit **/register**
-3. Fill in:
-   - Username (3-50 characters)
-   - Email address
-   - Password (min 8 chars, 1 upper, 1 lower, 1 number)
-4. Submit to create account (auto-login)
+2. Browse 120+ products across 4 categories:
+   - Outdoor Adventure
+   - Urban Exploration
+   - Travel Essentials
+   - Digital Nomad
+3. Use search to find specific items
+4. View product details, prices, and availability
 
-### 2. Login
-1. Visit **/login**
-2. Enter username/email and password
-3. Click **Log In**
-4. Redirected to **/account** page
+### 2. Shopping Cart
+- Add products to cart (guest or authenticated)
+- Adjust quantities or remove items
+- View cart subtotal and item count
+- Guest carts persist in localStorage
+- Authenticated carts sync with backend
 
-### 3. Access Protected Pages
-- **/account** - User profile and account information (requires auth)
+### 3. Register & Login
+1. Click **Sign up** or visit **/register**
+2. Fill in username, email, and password (min 8 chars, 1 upper, 1 lower, 1 number)
+3. Auto-login after registration
+4. Login at **/login** with username/email and password
+
+### 4. Checkout Process
+1. Click **Proceed to Checkout** from cart
+2. Complete 5-step checkout flow:
+   - Review cart items
+   - Enter shipping address
+   - Enter billing address (or use same as shipping)
+   - Enter payment information (mock)
+   - Confirm order
+3. View order confirmation with order number
+
+### 5. Order History
+- Visit **/orders** to view all past orders
+- Click on any order to see detailed information
+- View order status, items, and totals
+
+### 6. Protected Routes
+- **/account**, **/checkout**, **/orders** require authentication
 - Attempting to access without auth redirects to login
 - After login, returns to originally requested page
-
-### 4. Logout
-- Click **Log Out** button on account page
-- Token is removed and user is logged out
 
 ## Development
 
@@ -228,7 +301,41 @@ pytest --cov=app --cov-report=html
 | GET | `/api/auth/me` | Get current user info | Yes |
 | POST | `/api/auth/logout` | Logout user | Yes |
 
-Full API documentation available at **http://localhost:5000/docs** when backend is running.
+### Products
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/products` | List all products | No |
+| GET | `/api/products/{id}` | Get product by ID | No |
+| GET | `/api/products/search` | Search products | No |
+
+### Cart
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/cart` | Get user's cart | Optional* |
+| POST | `/api/cart/items` | Add item to cart | Optional* |
+| PUT | `/api/cart/items/{id}` | Update cart item | Optional* |
+| DELETE | `/api/cart/items/{id}` | Remove cart item | Optional* |
+| POST | `/api/cart/merge` | Merge guest cart | Yes |
+
+*Cart works for both guest and authenticated users
+
+### Orders
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/api/orders` | List user orders | Yes |
+| GET | `/api/orders/{id}` | Get order details | Yes |
+| POST | `/api/orders` | Create new order | Yes |
+
+### Checkout (Go Service)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/checkout` | Process checkout | Yes |
+
+Full API documentation available at **http://localhost:5001/docs** when backend is running.
 
 ## Testing
 
@@ -257,12 +364,49 @@ Tests include:
 - JWT token validation
 - Protected endpoint access
 
+## User Session Simulator
+
+Generate realistic user traffic and test the full e-commerce flow:
+
+```bash
+# Basic simulation (50 sessions with default conversion rates)
+python3 simulate_user_sessions.py
+
+# Custom simulation
+python3 simulate_user_sessions.py -n 100 \
+  --register-rate 0.40 \
+  --cart-rate 0.60 \
+  --checkout-rate 0.50 \
+  --complete-rate 0.70
+```
+
+The simulator:
+- Browses products with realistic timing delays
+- Registers users and logs in to get JWT tokens
+- Adds items to cart (1-5 products per session)
+- Completes multi-step checkout flow
+- Provides detailed conversion funnel statistics
+
+**Example output:**
+```
+Total Sessions:       50
+Browsed Products:     50 (100.0%)
+Registered:           15 (30.0% of browsers)
+Added to Cart:        6 (40.0% of registered)
+Started Checkout:     3 (50.0% of cart users)
+Completed Purchase:   2 (66.7% of checkouts)
+
+Overall Conversion:   2/50 = 4.00%
+```
+
+See `SIMULATION_GUIDE.md` for detailed documentation.
+
 ## Environment Variables
 
 ### Frontend (`.env`)
 ```env
 REACT_APP_TEXT="I'm REACT_APP_TEXT from .env"
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=http://localhost:5001
 ```
 
 ### Backend (`.env`)
@@ -274,7 +418,7 @@ ENVIRONMENT=development
 
 # Server
 HOST=0.0.0.0
-PORT=5000
+PORT=5001
 
 # Database
 DATABASE_URL=sqlite:///./voyager.db
@@ -289,7 +433,16 @@ BCRYPT_ROUNDS=12
 PASSWORD_MIN_LENGTH=8
 
 # CORS
-CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173
+```
+
+### Checkout Service (`.env`)
+```env
+SECRET_KEY=<same-as-backend-secret-key>
+FASTAPI_BASE_URL=http://localhost:5001
+VALIDATOR_API_URL=http://localhost:5003
+PORT=5002
+GIN_MODE=debug
 ```
 
 ## Security
@@ -319,10 +472,10 @@ CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 
 ### Backend Issues
 
-**Port 5000 already in use:**
+**Port 5001 already in use:**
 ```bash
 # Find and kill process
-lsof -ti:5000 | xargs kill -9
+lsof -ti:5001 | xargs kill -9
 ```
 
 **Import errors:**
