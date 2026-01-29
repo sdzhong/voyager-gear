@@ -40,6 +40,28 @@ func (h *CheckoutHandler) ProcessCheckout(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+func (h *CheckoutHandler) ProcessGuestCheckout(c *gin.Context) {
+	var req models.CheckoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body", "details": err.Error()})
+		return
+	}
+
+	// Validate that guest_email is provided
+	if req.GuestEmail == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "guest_email is required for guest checkout"})
+		return
+	}
+
+	resp, err := h.checkoutService.ProcessGuestCheckout(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
 func HealthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "healthy", "service": "checkout"})
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useCheckout } from '@/contexts/CheckoutProvider'
 import { useCart } from '@/hooks/useCart'
+import { useAuth } from '@/hooks/useAuth'
 import { checkoutService } from '@/services/checkout.service'
 import { CheckoutData } from '@/types/checkout.types'
 
@@ -8,11 +9,12 @@ export default function PaymentStep() {
   const { checkoutState, updateCheckoutState, goToNextStep, goToPreviousStep } =
     useCheckout()
   const { cart, guestCart, getSubtotal, shippingTax } = useCart()
+  const { isAuthenticated } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [orderNumber, setOrderNumber] = useState<string>('')
 
-  const { payment, shippingAddress, billingAddress, billingIsSameAsShipping } =
+  const { payment, shippingAddress, billingAddress, billingIsSameAsShipping, guestEmail } =
     checkoutState
 
   const items = cart?.items || guestCart || []
@@ -45,6 +47,7 @@ export default function PaymentStep() {
 
     try {
       const checkoutData: CheckoutData = {
+        ...((!isAuthenticated && guestEmail) ? { guest_email: guestEmail } : {}),
         shipping_address: {
           first_name: shippingAddress.firstName,
           last_name: shippingAddress.lastName,
@@ -98,7 +101,11 @@ export default function PaymentStep() {
         total_amount: total,
       }
 
-      const response = await checkoutService.processCheckout(checkoutData)
+      // Call appropriate checkout method based on authentication status
+      const response = isAuthenticated
+        ? await checkoutService.processCheckout(checkoutData)
+        : await checkoutService.processGuestCheckout(checkoutData)
+
       setOrderNumber(response.order_number)
       goToNextStep()
     } catch (err: any) {

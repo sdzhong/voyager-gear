@@ -78,6 +78,40 @@ func (c *FastAPIClient) CreateOrder(orderReq models.OrderCreateRequest, token st
 	return &orderResp, nil
 }
 
+func (c *FastAPIClient) CreateGuestOrder(orderReq models.OrderCreateRequest) (*models.OrderResponse, error) {
+	url := fmt.Sprintf("%s/api/orders/guest", c.baseURL)
+
+	jsonData, err := json.Marshal(orderReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal order: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create guest order: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("failed to create guest order: status %d, body: %s", resp.StatusCode, string(body))
+	}
+
+	var orderResp models.OrderResponse
+	if err := json.NewDecoder(resp.Body).Decode(&orderResp); err != nil {
+		return nil, fmt.Errorf("failed to decode order response: %w", err)
+	}
+
+	return &orderResp, nil
+}
+
 func (c *FastAPIClient) ClearCart(token string) error {
 	url := fmt.Sprintf("%s/api/cart/clear", c.baseURL)
 

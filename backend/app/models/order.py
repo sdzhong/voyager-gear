@@ -1,7 +1,8 @@
 """Order database model."""
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text, ForeignKey, CheckConstraint
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import validates
 from app.database import Base
 
 
@@ -11,7 +12,8 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    guest_email = Column(String(255), nullable=True, index=True)
     order_number = Column(String(20), unique=True, nullable=False, index=True)
     status = Column(String(20), nullable=False, default='pending', index=True)
 
@@ -61,6 +63,19 @@ class Order(Base):
     # Relationships
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+
+    # Add constraint: at least one of user_id or guest_email must be present
+    __table_args__ = (
+        CheckConstraint(
+            '(user_id IS NOT NULL AND guest_email IS NULL) OR (user_id IS NULL AND guest_email IS NOT NULL)',
+            name='check_user_or_guest'
+        ),
+    )
+
+    @property
+    def is_guest_order(self) -> bool:
+        """Check if this is a guest order."""
+        return self.guest_email is not None
 
     def __repr__(self):
         return f"<Order(id={self.id}, order_number='{self.order_number}', total={self.total_amount})>"

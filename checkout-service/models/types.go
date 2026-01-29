@@ -21,6 +21,7 @@ type CartItem struct {
 }
 
 type CheckoutRequest struct {
+	GuestEmail              string     `json:"guest_email,omitempty"`
 	ShippingAddress         Address    `json:"shipping_address"`
 	BillingAddress          Address    `json:"billing_address"`
 	BillingIsSameAsShipping bool       `json:"billing_same_as_shipping"`
@@ -62,6 +63,7 @@ type OrderItemCreate struct {
 }
 
 type OrderCreateRequest struct {
+	GuestEmail              string            `json:"guest_email,omitempty"`
 	ShippingFirstName       string            `json:"shipping_first_name"`
 	ShippingLastName        string            `json:"shipping_last_name"`
 	ShippingAddressLine1    string            `json:"shipping_address_line1"`

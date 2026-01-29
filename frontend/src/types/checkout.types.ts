@@ -22,6 +22,7 @@ export interface PaymentInfo {
 
 export interface CheckoutState {
   step: number
+  guestEmail?: string
   shippingAddress: Address
   billingAddress: Address
   billingIsSameAsShipping: boolean
@@ -32,6 +33,7 @@ export interface CheckoutState {
 }
 
 export interface CheckoutData {
+  guest_email?: string
   shipping_address: {
     first_name: string
     last_name: string

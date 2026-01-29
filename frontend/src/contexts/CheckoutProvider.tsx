@@ -33,6 +33,7 @@ const initialPayment: PaymentInfo = {
 
 const initialState: CheckoutState = {
   step: 1,
+  guestEmail: '',
   shippingAddress: { ...initialAddress },
   billingAddress: { ...initialAddress },
   billingIsSameAsShipping: true,

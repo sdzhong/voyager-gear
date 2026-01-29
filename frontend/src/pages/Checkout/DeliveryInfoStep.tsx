@@ -1,9 +1,11 @@
 import React from 'react'
 import { useCheckout } from '@/contexts/CheckoutProvider'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function DeliveryInfoStep() {
   const { checkoutState, updateCheckoutState, goToNextStep } = useCheckout()
-  const { shippingAddress, isGift } = checkoutState
+  const { shippingAddress, isGift, guestEmail } = checkoutState
+  const { isAuthenticated } = useAuth()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,6 +26,26 @@ export default function DeliveryInfoStep() {
       <h2 className="text-2xl font-bold mb-6">Delivery Information</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Email field for guest checkout */}
+        {!isAuthenticated && (
+          <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4">
+            <label className="block text-sm font-medium mb-1">
+              Email Address *
+            </label>
+            <input
+              type="email"
+              required
+              value={guestEmail || ''}
+              onChange={(e) => updateCheckoutState({ guestEmail: e.target.value })}
+              placeholder="your.email@example.com"
+              className="w-full px-3 py-2 border rounded"
+            />
+            <p className="text-xs text-gray-600 mt-1">
+              We'll send your order confirmation to this email
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">

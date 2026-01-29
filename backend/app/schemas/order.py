@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, EmailStr
 
 from app.schemas.product import ProductResponse
 
@@ -35,6 +35,9 @@ class OrderItemResponse(BaseModel):
 
 class OrderCreate(BaseModel):
     """Schema for creating an order."""
+
+    # Guest Email (required for guest orders)
+    guest_email: Optional[EmailStr] = Field(None, description="Email for guest checkout")
 
     # Shipping Address
     shipping_first_name: str = Field(..., min_length=1, max_length=100)
@@ -84,7 +87,8 @@ class OrderResponse(BaseModel):
     """Schema for order response."""
 
     id: int
-    user_id: int
+    user_id: Optional[int]
+    guest_email: Optional[str]
     order_number: str
     status: str
 

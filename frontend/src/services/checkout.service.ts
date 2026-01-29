@@ -23,6 +23,23 @@ class CheckoutService {
 
     return response.json()
   }
+
+  async processGuestCheckout(data: CheckoutData): Promise<CheckoutResponse> {
+    const response = await fetch(`${CHECKOUT_URL}/api/guest-checkout/process`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Guest checkout failed')
+    }
+
+    return response.json()
+  }
 }
 
 export const checkoutService = new CheckoutService()

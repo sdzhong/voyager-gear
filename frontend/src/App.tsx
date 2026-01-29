@@ -149,14 +149,7 @@ export default function VoyagerApp() {
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/cart" element={<Cart />} />
-        <Route
-          path="/checkout"
-          element={
-            <ProtectedRoute>
-              <Checkout />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/checkout" element={<Checkout />} />
         <Route
           path="/orders"
           element={

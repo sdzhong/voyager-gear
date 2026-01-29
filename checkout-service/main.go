@@ -35,10 +35,17 @@ func main() {
 
 	api := r.Group("/api")
 	{
+		// Authenticated checkout route
 		checkout := api.Group("/checkout")
 		checkout.Use(middleware.AuthMiddleware(cfg.SecretKey))
 		{
 			checkout.POST("/process", checkoutHandler.ProcessCheckout)
+		}
+
+		// Guest checkout route (no authentication required)
+		guestCheckout := api.Group("/guest-checkout")
+		{
+			guestCheckout.POST("/process", checkoutHandler.ProcessGuestCheckout)
 		}
 	}
 
