@@ -42,7 +42,8 @@ class UserSessionSimulator:
                     params={"skip": random.randint(0, 50), "limit": 20}
                 )
                 if response.status_code == 200:
-                    products = response.json()
+                    products_data = response.json()
+                    products = products_data.get("products", [])
                     self.log(f"Viewed {len(products)} products")
                 time.sleep(random.uniform(2, 5))
             except Exception as e:
@@ -86,6 +87,7 @@ class UserSessionSimulator:
         password = "Password123!"
 
         try:
+            # Step 1: Register the user
             response = self.session.post(
                 f"{API_BASE_URL}/api/auth/register",
                 json={
@@ -95,17 +97,30 @@ class UserSessionSimulator:
                 }
             )
 
-            if response.status_code == 200:
-                data = response.json()
+            if response.status_code not in [200, 201]:
+                self.log(f"Registration failed: {response.status_code}")
+                return False
+
+            # Step 2: Login to get the access token
+            login_response = self.session.post(
+                f"{API_BASE_URL}/api/auth/login",
+                json={
+                    "username": username,
+                    "password": password
+                }
+            )
+
+            if login_response.status_code == 200:
+                data = login_response.json()
                 self.token = data.get("access_token")
                 self.user_id = data.get("user", {}).get("id")
                 self.username = username
                 self.session.headers.update({"Authorization": f"Bearer {self.token}"})
-                self.log(f"Registered as {username}")
+                self.log(f"Registered and logged in as {username}")
                 time.sleep(random.uniform(1, 2))
                 return True
             else:
-                self.log(f"Registration failed: {response.status_code}")
+                self.log(f"Login after registration failed: {login_response.status_code}")
         except Exception as e:
             self.log(f"Error registering: {e}")
         return False
@@ -115,11 +130,10 @@ class UserSessionSimulator:
         try:
             response = self.session.post(
                 f"{API_BASE_URL}/api/cart/items",
-                json={"product_id": product_id, "quantity": quantity},
-                headers={"Authorization": f"Bearer {self.token}"} if self.token else {}
+                json={"product_id": product_id, "quantity": quantity}
             )
 
-            if response.status_code == 200:
+            if response.status_code in [200, 201]:
                 self.log(f"Added product {product_id} to cart (qty: {quantity})")
                 time.sleep(random.uniform(0.5, 2))
                 return True
@@ -132,10 +146,7 @@ class UserSessionSimulator:
     def view_cart(self) -> Optional[Dict]:
         """View cart contents"""
         try:
-            response = self.session.get(
-                f"{API_BASE_URL}/api/cart",
-                headers={"Authorization": f"Bearer {self.token}"} if self.token else {}
-            )
+            response = self.session.get(f"{API_BASE_URL}/api/cart")
 
             if response.status_code == 200:
                 cart = response.json()
@@ -214,8 +225,7 @@ class UserSessionSimulator:
         try:
             response = self.session.post(
                 f"{CHECKOUT_SERVICE_URL}/checkout",
-                json=checkout_data,
-                headers={"Authorization": f"Bearer {self.token}"}
+                json=checkout_data
             )
 
             if response.status_code == 200:
@@ -276,7 +286,8 @@ def run_simulation(num_sessions: int = 100,
     # Get available products
     try:
         response = requests.get(f"{API_BASE_URL}/api/products", params={"limit": 100})
-        available_products = response.json()
+        products_data = response.json()
+        available_products = products_data.get("products", [])
         product_ids = [p["id"] for p in available_products if p.get("stock", 0) > 0]
         print(f"Found {len(product_ids)} products available for simulation\n")
     except Exception as e:
@@ -364,12 +375,24 @@ def run_simulation(num_sessions: int = 100,
     print("SIMULATION COMPLETE - FINAL STATISTICS")
     print("=" * 80)
     print(f"Total Sessions:       {stats['total_sessions']}")
-    print(f"Browsed Products:     {stats['browsed']} ({stats['browsed']/stats['total_sessions']*100:.1f}%)")
-    print(f"Registered:           {stats['registered']} ({stats['registered']/stats['browsed']*100:.1f}% of browsers)")
-    print(f"Added to Cart:        {stats['added_to_cart']} ({stats['added_to_cart']/stats['registered']*100:.1f}% of registered)")
-    print(f"Started Checkout:     {stats['started_checkout']} ({stats['started_checkout']/stats['added_to_cart']*100:.1f}% of cart users)")
-    print(f"Completed Purchase:   {stats['completed_purchase']} ({stats['completed_purchase']/stats['started_checkout']*100:.1f}% of checkouts)")
-    print(f"\nOverall Conversion:   {stats['completed_purchase']}/{stats['total_sessions']} = {stats['completed_purchase']/stats['total_sessions']*100:.2f}%")
+
+    browse_pct = (stats['browsed']/stats['total_sessions']*100) if stats['total_sessions'] > 0 else 0
+    print(f"Browsed Products:     {stats['browsed']} ({browse_pct:.1f}%)")
+
+    reg_pct = (stats['registered']/stats['browsed']*100) if stats['browsed'] > 0 else 0
+    print(f"Registered:           {stats['registered']} ({reg_pct:.1f}% of browsers)")
+
+    cart_pct = (stats['added_to_cart']/stats['registered']*100) if stats['registered'] > 0 else 0
+    print(f"Added to Cart:        {stats['added_to_cart']} ({cart_pct:.1f}% of registered)")
+
+    checkout_pct = (stats['started_checkout']/stats['added_to_cart']*100) if stats['added_to_cart'] > 0 else 0
+    print(f"Started Checkout:     {stats['started_checkout']} ({checkout_pct:.1f}% of cart users)")
+
+    complete_pct = (stats['completed_purchase']/stats['started_checkout']*100) if stats['started_checkout'] > 0 else 0
+    print(f"Completed Purchase:   {stats['completed_purchase']} ({complete_pct:.1f}% of checkouts)")
+
+    overall_pct = (stats['completed_purchase']/stats['total_sessions']*100) if stats['total_sessions'] > 0 else 0
+    print(f"\nOverall Conversion:   {stats['completed_purchase']}/{stats['total_sessions']} = {overall_pct:.2f}%")
     print("=" * 80)
 
 

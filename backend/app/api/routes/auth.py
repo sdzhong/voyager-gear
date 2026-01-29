@@ -103,7 +103,7 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         raise InvalidCredentialsError("Account is inactive")
 
     # Create access token
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
 
     return LoginResponse(
         access_token=access_token,
