@@ -16,6 +16,20 @@ Sentry.init({
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration(),
+    Sentry.feedbackIntegration({
+      // Additional SDK configuration goes in here, for example:
+      colorScheme: "system",
+      autoInject: true,
+      showBranding: false,
+      // Customize the widget appearance
+      formTitle: "Report a Problem",
+      submitButtonLabel: "Send Feedback",
+      cancelButtonLabel: "Cancel",
+      messagePlaceholder: "What went wrong? Please describe what happened...",
+      namePlaceholder: "Your Name (Optional)",
+      emailPlaceholder: "Your Email (Optional)",
+      successMessageText: "Thank you for your feedback!",
+    }),
   ],
   environment: import.meta.env.MODE || 'development',
   debug: true, // Enable debug mode for verbose logging
