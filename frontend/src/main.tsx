@@ -40,8 +40,31 @@ Sentry.init({
   // Session Replay
   replaysSessionSampleRate: 1.0, // Capture 100% of sessions in development
   replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors
-  beforeSend(event) {
+  beforeSend(event, hint) {
     console.log('Sentry event being sent:', event);
+
+    // Show the crash report modal for errors
+    if (event.exception) {
+      Sentry.showReportDialog({
+        eventId: event.event_id,
+        user: {
+          email: event.user?.email || '',
+          name: event.user?.username || '',
+        },
+        title: 'It looks like we\'re having issues.',
+        subtitle: 'Our team has been notified.',
+        subtitle2: 'If you\'d like to help, tell us what happened below.',
+        labelName: 'Name',
+        labelEmail: 'Email',
+        labelComments: 'What happened?',
+        labelClose: 'Close',
+        labelSubmit: 'Submit',
+        errorGeneric: 'An unknown error occurred while submitting your report. Please try again.',
+        errorFormEntry: 'Some fields were invalid. Please correct the errors and try again.',
+        successMessage: 'Your feedback has been sent. Thank you!',
+      });
+    }
+
     return event;
   },
 });
