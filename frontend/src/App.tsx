@@ -14,6 +14,7 @@ import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import Orders from './pages/Orders'
 import OrderDetail from './pages/OrderDetail'
+import SentryTest from './pages/SentryTest'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import MiniCart from './components/cart/MiniCart'
 import { productService } from './services/product.service'
@@ -150,6 +151,7 @@ export default function VoyagerApp() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/sentry-test" element={<SentryTest />} />
         <Route
           path="/orders"
           element={
