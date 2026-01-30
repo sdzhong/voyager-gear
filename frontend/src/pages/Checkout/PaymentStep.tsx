@@ -4,6 +4,7 @@ import { useCart } from '@/hooks/useCart'
 import { useAuth } from '@/hooks/useAuth'
 import { checkoutService } from '@/services/checkout.service'
 import { CheckoutData } from '@/types/checkout.types'
+import * as Sentry from '@sentry/react'
 
 export default function PaymentStep() {
   const { checkoutState, updateCheckoutState, goToNextStep, goToPreviousStep } =
@@ -109,7 +110,44 @@ export default function PaymentStep() {
       setOrderNumber(response.order_number)
       goToNextStep()
     } catch (err: any) {
-      setError(err.message || 'Failed to process checkout')
+      // Determine error type and message
+      let errorMessage = 'Failed to process checkout'
+      const isNetworkError = err.message?.includes('fetch') || err.name === 'TypeError'
+
+      if (isNetworkError) {
+        errorMessage = 'Unable to connect to checkout service. The service may be unavailable. Please try again later.'
+      } else {
+        errorMessage = err.message || errorMessage
+      }
+
+      setError(errorMessage)
+
+      // Capture error in Sentry with additional context
+      Sentry.captureException(err, {
+        level: 'error',
+        tags: {
+          component: 'PaymentStep',
+          action: 'place_order',
+          checkout_type: isAuthenticated ? 'authenticated' : 'guest',
+          error_type: isNetworkError ? 'network_error' : 'checkout_error',
+        },
+        contexts: {
+          checkout: {
+            isAuthenticated,
+            itemCount: items.length,
+            totalAmount: total,
+            hasGuestEmail: !!guestEmail,
+            billingIsSameAsShipping,
+          },
+        },
+        extra: {
+          errorMessage,
+          originalError: err.message,
+          checkoutServiceUrl: 'http://localhost:5002',
+        },
+      })
+
+      console.error('Checkout error:', err)
     } finally {
       setIsProcessing(false)
     }
