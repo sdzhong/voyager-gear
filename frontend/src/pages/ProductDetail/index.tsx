@@ -8,6 +8,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { productService } from '@/services/product.service'
 import type { Product } from '@/types/product.types'
 import { useCart } from '@/hooks/useCart'
+import * as Sentry from '@sentry/react'
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -29,6 +30,14 @@ const ProductDetail: React.FC = () => {
       try {
         const data = await productService.getProduct(parseInt(id))
         setProduct(data)
+
+        // Track product page view metric
+        Sentry.metrics.count('products_page_views', 1, {
+          tags: {
+            product_id: id,
+            product_category: data.category,
+          },
+        })
       } catch (err: any) {
         setError(err.message || 'Failed to load product')
       } finally {

@@ -23,6 +23,7 @@ import {
 } from '@/utils/storage'
 import { useAuth } from '@/hooks/useAuth'
 import { productService } from '@/services/product.service'
+import * as Sentry from '@sentry/react'
 
 // Create cart context
 export const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -123,6 +124,24 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
     initCart()
   }, [isAuthenticated, authLoading, refreshCart])
+
+  /**
+   * Track cart size metric whenever cart changes
+   */
+  useEffect(() => {
+    if (state.isLoading) return
+
+    const cartSize = isAuthenticated && state.cart
+      ? state.cart.items.reduce((total, item) => total + item.quantity, 0)
+      : state.guestCart.reduce((total, item) => total + item.quantity, 0)
+
+    // Track cart size using Sentry metrics
+    Sentry.metrics.gauge('cart_size', cartSize, {
+      tags: {
+        user_type: isAuthenticated ? 'authenticated' : 'guest',
+      },
+    })
+  }, [state.cart, state.guestCart, state.isLoading, isAuthenticated])
 
   /**
    * Add item to cart

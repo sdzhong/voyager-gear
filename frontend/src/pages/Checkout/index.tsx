@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { CheckoutProvider, useCheckout } from '@/contexts/CheckoutProvider'
+import { useCart } from '@/hooks/useCart'
 import CartReviewStep from './CartReviewStep'
 import DeliveryInfoStep from './DeliveryInfoStep'
 import BillingInfoStep from './BillingInfoStep'
 import PaymentStep from './PaymentStep'
 import ConfirmationStep from './ConfirmationStep'
+import * as Sentry from '@sentry/react'
 
 const steps = [
   { number: 1, name: 'Cart', component: CartReviewStep },
@@ -16,9 +18,30 @@ const steps = [
 
 function CheckoutContent() {
   const { checkoutState } = useCheckout()
+  const { getSubtotal } = useCart()
   const currentStep = checkoutState.step
 
   const CurrentStepComponent = steps[currentStep - 1].component
+
+  // Track all metrics when user visits checkout page
+  useEffect(() => {
+    const cartTotal = getSubtotal()
+
+    // Gauge metric - tracks a value that can go up or down
+    Sentry.metrics.gauge('checkout_current_step', currentStep, {
+      tags: {
+        step_name: steps[currentStep - 1].name.toLowerCase(),
+      },
+    })
+
+    // Distribution metric - tracks distribution of order amounts
+    Sentry.metrics.distribution('order.amount_usd', cartTotal, {
+      unit: 'usd',
+      tags: {
+        session_type: 'web',
+      },
+    })
+  }, []) // Only run once when component mounts
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">

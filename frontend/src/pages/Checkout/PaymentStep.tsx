@@ -108,6 +108,45 @@ export default function PaymentStep() {
         : await checkoutService.processGuestCheckout(checkoutData)
 
       setOrderNumber(response.order_number)
+
+      // Track order completion metrics
+      const orderAmountRange = total < 50 ? 'under_50' : total < 100 ? '50_100' : total < 200 ? '100_200' : 'over_200'
+
+      // Count checkout success
+      Sentry.metrics.count('checkout_success', 1, {
+        tags: {
+          checkout_type: isAuthenticated ? 'authenticated' : 'guest',
+          payment_method: 'credit_card',
+          is_gift: checkoutState.isGift ? 'true' : 'false',
+          order_amount_range: orderAmountRange,
+        },
+      })
+
+      // Count order completion
+      Sentry.metrics.count('order_completed', 1, {
+        tags: {
+          checkout_type: isAuthenticated ? 'authenticated' : 'guest',
+          payment_method: 'credit_card',
+          is_gift: checkoutState.isGift ? 'true' : 'false',
+          order_amount_range: orderAmountRange,
+        },
+      })
+
+      // Track order amount as a distribution
+      Sentry.metrics.distribution('order_amount', total, {
+        unit: 'usd',
+        tags: {
+          checkout_type: isAuthenticated ? 'authenticated' : 'guest',
+        },
+      })
+
+      // Track items count as a distribution
+      Sentry.metrics.distribution('order_items_count', items.length, {
+        tags: {
+          checkout_type: isAuthenticated ? 'authenticated' : 'guest',
+        },
+      })
+
       goToNextStep()
     } catch (err: any) {
       // Determine error type and message
@@ -121,6 +160,14 @@ export default function PaymentStep() {
       }
 
       setError(errorMessage)
+
+      // Count checkout failure
+      Sentry.metrics.count('checkout_failure', 1, {
+        tags: {
+          checkout_type: isAuthenticated ? 'authenticated' : 'guest',
+          error_type: isNetworkError ? 'network_error' : 'checkout_error',
+        },
+      })
 
       // Capture error in Sentry with additional context
       Sentry.captureException(err, {

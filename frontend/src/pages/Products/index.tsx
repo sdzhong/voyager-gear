@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react'
 import { productService } from '@/services/product.service'
 import type { ProductFilters, ProductListResponse, ProductCategory } from '@/types/product.types'
 import ProductList from '@/components/products/ProductList'
+import * as Sentry from '@sentry/react'
 
 const Products: React.FC = () => {
   const [data, setData] = useState<ProductListResponse | null>(null)
@@ -26,6 +27,21 @@ const Products: React.FC = () => {
       try {
         const response = await productService.getProducts(filters)
         setData(response)
+
+        // Track product page view metric
+        Sentry.metrics.count('product_page_view', 1, {
+          tags: {
+            category: filters.category || 'all',
+            has_search: filters.search ? 'true' : 'false',
+          },
+        })
+
+        // Track total products as a gauge
+        Sentry.metrics.gauge('products_displayed', response.products.length, {
+          tags: {
+            category: filters.category || 'all',
+          },
+        })
       } catch (err: any) {
         setError(err.message || 'Failed to load products')
       } finally {
